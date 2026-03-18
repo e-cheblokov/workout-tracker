@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Тренировки</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #f2f2f7;
+    --card: #ffffff;
+    --sep: #e5e5ea;
+    --blue: #007aff;
+    --green: #34c759;
+    --text: #1c1c1e;
+    --text2: #3a3a3c;
+    --text3: #8e8e93;
+    --radius: 16px;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: rgba(242,242,247,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 0.5px solid var(--sep);
+    padding: 14px 20px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .date-label { font-size: 13px; color: var(--text3); padding-bottom: 3px; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(242,242,247,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 0.5px solid var(--sep);
+    display: flex;
+    padding: 8px 0 16px;
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 0;
+  }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--text3); }
+  .nav-item.active .nav-label { color: var(--blue); }
+
+  /* SECTIONS */
+  .section { padding: 20px 16px 0; }
+  .section-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text3); text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 8px; padding-left: 4px;
+  }
+
+  /* DAY PILLS */
+  .day-row { display: flex; gap: 8px; }
+  .day-pill {
+    flex: 1;
+    background: var(--card);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 4px;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.15s;
+  }
+  .day-pill.active { background: var(--blue); }
+  .day-pill-label { font-size: 11px; font-weight: 600; color: var(--text3); display: block; }
+  .day-pill.active .day-pill-label { color: white; }
+  .day-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--blue); margin: 5px auto 0; }
+  .day-pill.active .day-pill-dot { background: rgba(255,255,255,0.5); }
+  .day-pill-empty { height: 10px; }
+
+  /* PROGRESS CARD */
+  .progress-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--sep); stroke-width: 7; }
+  .ring-fill { fill: none; stroke: var(--blue); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; }
+  .ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-pct { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .ring-sub { font-size: 9px; color: var(--text3); font-weight: 500; }
+  .prog-info { flex: 1; }
+  .prog-name { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+  .prog-sets { font-size: 13px; color: var(--text3); margin-bottom: 12px; }
+  .finish-btn {
+    width: 100%; padding: 11px;
+    background: var(--blue);
+    border: none; border-radius: 10px;
+    color: white; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .finish-btn:active { opacity: 0.75; }
+  .finish-btn.soft { background: var(--bg); color: var(--blue); }
+
+  /* EXERCISE CARD */
+  .ex-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .ex-header {
+    padding: 13px 16px 10px;
+    border-bottom: 0.5px solid var(--sep);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .ex-name { font-size: 15px; font-weight: 600; flex: 1; }
+  .ex-badge {
+    font-size: 12px; color: var(--text3);
+    background: var(--bg);
+    padding: 3px 9px; border-radius: 20px;
+    font-weight: 500; white-space: nowrap; flex-shrink: 0;
+  }
+  .ex-badge.done { color: var(--green); background: rgba(52,199,89,0.12); }
+
+  .sets-grid { display: flex; flex-wrap: wrap; }
+  .set-cell {
+    flex: 0 0 25%;
+    border-right: 0.5px solid var(--sep);
+    border-bottom: 0.5px solid var(--sep);
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: background 0.1s;
+    min-width: 0;
+    position: relative;
+  }
+  .set-cell:nth-child(4n) { border-right: none; }
+  .set-cell.no-bottom { border-bottom: none; }
+  .set-cell:active { background: var(--bg); }
+  .set-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600;
+    color: var(--text3); background: var(--bg);
+    transition: all 0.2s;
+  }
+  .set-num.done { background: var(--blue); color: white; }
+  .set-reps { font-size: 11px; color: var(--text3); font-weight: 500; text-align: center; }
+  .set-reps.done { color: var(--blue); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 200;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.22s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet {
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 430px;
+    padding: 12px 20px 36px;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--sep); border-radius: 2px; margin: 0 auto 18px; }
+  .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+  .modal-input-row {
+    display: flex; align-items: center;
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+  .step-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--sep); border: none;
+    font-size: 22px; color: var(--blue);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s;
+    font-weight: 300; flex-shrink: 0;
+  }
+  .step-btn:active { background: #d1d1d6; }
+  .modal-input {
+    flex: 1;
+    background: none; border: none; outline: none;
+    font-size: 32px; font-weight: 700;
+    color: var(--text); font-family: inherit;
+    text-align: center; min-width: 0;
+  }
+  .modal-unit { font-size: 14px; color: var(--text3); font-weight: 500; flex-shrink: 0; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1; padding: 14px;
+    border-radius: 12px; border: none;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: opacity 0.12s;
+  }
+  .modal-btn:active { opacity: 0.75; }
+  .modal-btn.cancel { background: var(--bg); color: var(--text); }
+  .modal-btn.confirm { background: var(--blue); color: white; }
+
+  /* HISTORY */
+  .hist-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .hist-header {
+    padding: 13px 16px;
+    border-bottom: 0.5px solid var(--sep);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .hist-name { font-size: 15px; font-weight: 600; }
+  .hist-date { font-size: 13px; color: var(--text3); }
+  .hist-row {
+    padding: 11px 16px;
+    border-bottom: 0.5px solid var(--sep);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-ex-name { font-size: 14px; color: var(--text2); }
+  .hist-ex-detail { font-size: 13px; color: var(--text3); }
+
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-size: 17px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+  .empty-sub { font-size: 14px; color: var(--text3); line-height: 1.5; }
+
+
+  .export-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .export-inner {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .export-label { font-size: 15px; font-weight: 600; }
+  .export-sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .export-btn {
+    background: var(--blue);
+    color: white; border: none;
+    border-radius: 10px; padding: 8px 16px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .export-btn:active { opacity: 0.75; }
+  .export-toast {
+    position: fixed; bottom: 100px;
+    left: 50%; transform: translateX(-50%);
+    background: #1c1c1e; color: white;
+    padding: 10px 20px; border-radius: 20px;
+    font-size: 14px; font-weight: 500;
+    z-index: 300; opacity: 0; transition: opacity 0.2s;
+    white-space: nowrap; pointer-events: none;
+  }
+  .export-toast.show { opacity: 1; }
+
+  .hidden { display: none !important; }
+  .view { padding-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="page-title" id="page-title">Тренировка</div>
+  <div class="date-label" id="page-date"></div>
+</div>
+
+<!-- WORKOUT VIEW -->
+<div class="view" id="view-workout">
+  <div class="section">
+    <div class="section-title">Неделя</div>
+    <div class="day-row" id="day-row"></div>
+  </div>
+  <div class="section">
+    <div class="progress-card">
+      <div class="ring-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="34"/>
+          <circle class="ring-fill" id="ring-fill" cx="40" cy="40" r="34"
+            stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+        </svg>
+        <div class="ring-text">
+          <span class="ring-pct" id="ring-pct">0%</span>
+          <span class="ring-sub">готово</span>
+        </div>
+      </div>
+      <div class="prog-info">
+        <div class="prog-name" id="prog-name"></div>
+        <div class="prog-sets" id="prog-sets"></div>
+        <button class="finish-btn soft" id="finish-btn" onclick="finishWorkout()">Завершить</button>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Упражнения</div>
+    <div id="exercises"></div>
+  </div>
+</div>
+
+<!-- HISTORY VIEW -->
+<div class="view hidden" id="view-history">
+  <div class="section">
+  <div class="export-card">
+    <div class="export-inner">
+      <div>
+        <div class="export-label">Экспорт истории</div>
+        <div class="export-sub">Скопировать для анализа</div>
+      </div>
+      <button class="export-btn" onclick="exportHistory()">Копировать</button>
+    </div>
+  </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" id="nav-workout" onclick="switchView('workout')">
+    <span class="nav-icon">🏋️</span>
+    <span class="nav-label">Тренировка</span>
+  </button>
+  <button class="nav-item" id="nav-history" onclick="switchView('history')">
+    <span class="nav-icon">📋</span>
+    <span class="nav-label">История</span>
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Подход 1</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-input-row">
+      <button class="step-btn" onclick="stepReps(-1)">−</button>
+      <input class="modal-input" id="modal-input" type="number" inputmode="numeric" min="0"/>
+      <button class="step-btn" onclick="stepReps(1)">+</button>
+      <span class="modal-unit" id="modal-unit">повт</span>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">Отмена</button>
+      <button class="modal-btn confirm" onclick="confirmReps()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLANS = {
+  chest: {
+    label: "Грудь + Трицепс", day: "Пн", color: "#ff9500",
+    exercises: [
+      { name: "Отжимания с ногами на возвышении", sets: 4, reps: "13", unit: "повт" },
+      { name: "Обычные отжимания", sets: 3, reps: "16", unit: "повт" },
+      { name: "Жим резинкой", sets: 4, reps: "17", unit: "повт" },
+      { name: "Разведение резинкой", sets: 3, reps: "15", unit: "повт" },
+      { name: "Отжимания узким хватом", sets: 3, reps: "13", unit: "повт" },
+    ]
+  },
+  legs: {
+    label: "Ноги + Кор", day: "Ср", color: "#34c759",
+    exercises: [
+      { name: "Приседания с паузой (2 сек)", sets: 4, reps: "15", unit: "повт" },
+      { name: "Болгарский сплит-присед", sets: 4, reps: "10", unit: "на ногу" },
+      { name: "Румынская тяга с резинкой", sets: 3, reps: "15", unit: "повт" },
+      { name: "Ягодичный мост с резинкой", sets: 3, reps: "20", unit: "повт" },
+      { name: "Подъём на носки", sets: 4, reps: "25", unit: "повт" },
+      { name: "Планка", sets: 3, reps: "45", unit: "сек" },
+    ]
+  },
+  back: {
+    label: "Спина + Бицепс", day: "Пт", color: "#007aff",
+    exercises: [
+      { name: "Подтягивания", sets: 5, reps: "6", unit: "повт" },
+      { name: "Австралийские подтягивания", sets: 3, reps: "12", unit: "повт" },
+      { name: "Тяга резинки к поясу", sets: 3, reps: "15", unit: "повт" },
+      { name: "Face pull с резинкой", sets: 3, reps: "20", unit: "повт" },
+      { name: "Сгибания на бицепс с резинкой", sets: 3, reps: "17", unit: "повт" },
+      { name: "Мёртвый вис", sets: 2, reps: "45", unit: "сек" },
+    ]
+  }
+};
+
+const DAY_MAP = { 0: 'chest', 2: 'legs', 4: 'back' };
+const DAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+let activeType = 'back';
+let completedSets = {};
+let repsLog = {};
+let currentView = 'workout';
+let modalKey = null;
+
+let history = [];
+try { history = JSON.parse(localStorage.getItem('wt_v2_history') || '[]'); } catch(e) {}
+
+// Restore in-progress session
+try {
+  const session = JSON.parse(localStorage.getItem('wt_session') || '{}');
+  if (session.completedSets) completedSets = session.completedSets;
+  if (session.repsLog) repsLog = session.repsLog;
+  if (session.activeType) activeType = session.activeType;
+} catch(e) {}
+
+function saveSession() {
+  try {
+    localStorage.setItem('wt_session', JSON.stringify({ completedSets, repsLog, activeType }));
+  } catch(e) {}
+}
+
+function clearSession() {
+  try { localStorage.removeItem('wt_session'); } catch(e) {}
+}
+
+function getTodayIdx() {
+  const d = new Date().getDay();
+  return d === 0 ? 6 : d - 1;
+}
+
+function init() {
+  const ti = getTodayIdx();
+  // Only set activeType from today if no session saved
+  if (!localStorage.getItem('wt_session')) {
+    activeType = DAY_MAP[ti] || 'back';
+  }
+  const now = new Date();
+  document.getElementById('page-date').textContent =
+    now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  renderDayRow();
+  renderExercises();
+}
+
+function renderDayRow() {
+  const container = document.getElementById('day-row');
+  container.innerHTML = DAYS_RU.map((d, i) => {
+    const wType = DAY_MAP[i];
+    const isActive = wType === activeType;
+    const cls = ['day-pill', isActive ? 'active' : '', !wType ? '' : ''].filter(Boolean).join(' ');
+    const inner = wType
+      ? `<span class="day-pill-label">${d}</span><div class="day-pill-dot"></div>`
+      : `<span class="day-pill-label">${d}</span><div class="day-pill-empty"></div>`;
+    const click = wType ? `onclick="selectDay('${wType}')"` : '';
+    return `<div class="${cls}" style="opacity:${wType ? 1 : 0.38}" ${click}>${inner}</div>`;
+  }).join('');
+}
+
+function selectDay(type) {
+  activeType = type;
+  saveSession();
+  renderDayRow();
+  renderExercises();
+}
+
+function renderExercises() {
+  const plan = PLANS[activeType];
+  let total = 0, done = 0;
+  plan.exercises.forEach((ex, ei) => {
+    total += ex.sets;
+    for (let si = 0; si < ex.sets; si++) {
+      if (completedSets[key(activeType, ei, si)]) done++;
+    }
+  });
+
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const circ = 213.6;
+  const fill = document.getElementById('ring-fill');
+  fill.style.strokeDashoffset = circ - circ * pct / 100;
+  fill.style.stroke = PLANS[activeType].color;
+  document.getElementById('ring-pct').textContent = pct + '%';
+  document.getElementById('prog-name').textContent = plan.label;
+  document.getElementById('prog-sets').textContent = `${done} из ${total} подходов`;
+
+  const btn = document.getElementById('finish-btn');
+  if (pct === 100) {
+    btn.textContent = 'Завершить тренировку ✓';
+    btn.className = 'finish-btn';
+  } else {
+    btn.textContent = done > 0 ? 'Завершить досрочно' : 'Завершить';
+    btn.className = 'finish-btn soft';
+  }
+
+  const container = document.getElementById('exercises');
+  container.innerHTML = plan.exercises.map((ex, ei) => {
+    const exDone = Array.from({length: ex.sets}, (_, si) => completedSets[key(activeType, ei, si)]).filter(Boolean).length;
+    const allDone = exDone === ex.sets;
+    const badge = exDone === 0 ? `${ex.sets} подх · ${ex.reps} ${ex.unit}` : `${exDone}/${ex.sets}`;
+    const badgeCls = 'ex-badge' + (allDone ? ' done' : '');
+    const lastRowStart = Math.floor((ex.sets - 1) / 4) * 4;
+
+    const cells = Array.from({length: ex.sets}, (_, si) => {
+      const k = key(activeType, ei, si);
+      const isDone = !!completedSets[k];
+      const repsVal = repsLog[k] !== undefined ? repsLog[k] : ex.reps;
+      const noBottom = si >= lastRowStart ? ' no-bottom' : '';
+      return `<div class="set-cell${noBottom}" onclick="tapSet('${activeType}','${ei}','${si}')">
+        <div class="set-num${isDone ? ' done' : ''}">${isDone ? '✓' : si+1}</div>
+        <div class="set-reps${isDone ? ' done' : ''}">${repsVal} ${ex.unit}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="ex-card">
+      <div class="ex-header">
+        <div class="ex-name">${ex.name}</div>
+        <div class="${badgeCls}">${badge}</div>
+      </div>
+      <div class="sets-grid">${cells}</div>
+    </div>`;
+  }).join('');
+}
+
+function key(type, ei, si) { return `${type}-${ei}-${si}`; }
+
+function tapSet(type, ei, si) {
+  const k = key(type, ei, si);
+  const ex = PLANS[type].exercises[ei];
+  const alreadyDone = !!completedSets[k];
+  if (!alreadyDone) {
+    completedSets[k] = true;
+    saveSession();
+    renderExercises();
+  }
+  // Always open modal (for new completion or re-editing)
+  openModal(k, repsLog[k] !== undefined ? repsLog[k] : ex.reps, ex.unit, ex.name, si);
+}
+
+function openModal(k, val, unit, exName, si) {
+  modalKey = k;
+  document.getElementById('modal-title').textContent = `Подход ${parseInt(si) + 1}`;
+  document.getElementById('modal-sub').textContent = exName;
+  document.getElementById('modal-unit').textContent = unit;
+  document.getElementById('modal-input').value = val;
+  const overlay = document.getElementById('modal');
+  overlay.classList.add('open');
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  setTimeout(() => document.getElementById('modal-input').select(), 300);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  modalKey = null;
+}
+
+function confirmReps() {
+  if (!modalKey) return;
+  const val = document.getElementById('modal-input').value.trim();
+  if (val !== '') repsLog[modalKey] = val;
+  saveSession();
+  closeModal();
+  renderExercises();
+}
+
+function stepReps(d) {
+  const inp = document.getElementById('modal-input');
+  inp.value = Math.max(0, (parseInt(inp.value) || 0) + d);
+}
+
+function finishWorkout() {
+  const plan = PLANS[activeType];
+  const entry = {
+    id: Date.now(),
+    label: plan.label,
+    date: new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }),
+    exercises: plan.exercises.map((ex, ei) => ({
+      name: ex.name,
+      sets: Array.from({length: ex.sets}, (_, si) => {
+        const k = key(activeType, ei, si);
+        return { done: !!completedSets[k], reps: repsLog[k] !== undefined ? repsLog[k] : ex.reps, unit: ex.unit };
+      })
+    }))
+  };
+  history.unshift(entry);
+  try { localStorage.setItem('wt_v2_history', JSON.stringify(history)); } catch(e) {}
+
+  // Reset
+  Object.keys(completedSets).filter(k => k.startsWith(activeType + '-')).forEach(k => {
+    delete completedSets[k]; delete repsLog[k];
+  });
+  clearSession();
+  renderExercises();
+  switchView('history');
+}
+
+function switchView(v) {
+  currentView = v;
+  document.getElementById('view-workout').classList.toggle('hidden', v !== 'workout');
+  document.getElementById('view-history').classList.toggle('hidden', v !== 'history');
+  document.getElementById('nav-workout').classList.toggle('active', v === 'workout');
+  document.getElementById('nav-history').classList.toggle('active', v === 'history');
+  document.getElementById('page-title').textContent = v === 'workout' ? 'Тренировка' : 'История';
+  if (v === 'history') renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!history.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">История пуста</div>
+      <div class="empty-sub">Завершённые тренировки<br>будут отображаться здесь</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = history.map((w, wi) => {
+    const rows = w.exercises.map(ex => {
+      const done = ex.sets.filter(s => s.done);
+      if (!done.length) return '';
+      return `<div class="hist-row">
+        <div class="hist-ex-name">${ex.name}</div>
+        <div class="hist-ex-detail">${done.length} подх · ${done.map(s => `${s.reps} ${s.unit}`).join(', ')}</div>
+      </div>`;
+    }).filter(Boolean).join('');
+    return `<div class="hist-card">
+      <div class="hist-header">
+        <div>
+          <div class="hist-name">${w.label}</div>
+          <div class="hist-date">${w.date}</div>
+        </div>
+        <button class="export-btn" style="padding:6px 12px;font-size:13px" onclick="copyWorkout(${wi})">Копировать</button>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✓ Скопировано в буфер обмена');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✓ Скопировано в буфер обмена');
+  });
+}
+
+function copyWorkout(idx) {
+  const w = history[idx];
+  if (!w) return;
+  copyToClipboard(JSON.stringify(w, null, 2));
+}
+
+function exportHistory() {
+  if (!history.length) {
+    showToast('История пуста');
+    return;
+  }
+  copyToClipboard(JSON.stringify(history, null, 2));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('export-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+
+<div class="export-toast" id="export-toast">✓ Скопировано в буфер обмена</div>
+</body>
+</html>
